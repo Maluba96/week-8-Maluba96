@@ -1,0 +1,140 @@
+CREATE DATABASE MaternalHealthDB;
+USE MaternalHealthDB;
+CREATE TABLE Mothers (
+    Mother_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL,
+    Age INT NOT NULL,
+    Location POINT NOT NULL,
+    Number_of_Pregnancies INT NOT NULL
+);
+CREATE TABLE Healthcare_Facilities (
+    Facility_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Facility_Name VARCHAR(100) NOT NULL,
+    Location POINT NOT NULL,
+    Type ENUM('Hospital', 'Clinic') NOT NULL,
+    Number_of_Beds INT NOT NULL
+);
+CREATE TABLE Healthcare_Workers (
+    Worker_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL,
+    Qualification ENUM('Doctor', 'Nurse', 'Midwife') NOT NULL,
+    Facility_ID INT NOT NULL,
+    FOREIGN KEY (Facility_ID) REFERENCES Healthcare_Facilities(Facility_ID)
+);
+
+CREATE TABLE Maternal_Health_Records (
+    Record_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Mother_ID INT NOT NULL,
+    Facility_ID INT NOT NULL,
+    Date_of_Visit DATE NOT NULL,
+    Outcome ENUM('Successful', 'Complications') NOT NULL,
+    FOREIGN KEY (Mother_ID) REFERENCES Mothers(Mother_ID),
+    FOREIGN KEY (Facility_ID) REFERENCES Healthcare_Facilities(Facility_ID)
+);
+
+INSERT INTO Mothers (Name, Age, Location, Number_of_Pregnancies)
+VALUES 
+('Chileshe Mwansa', 28, ST_GeomFromText('POINT(15.3875 -29.5973)'), 2),
+('Lombe Chileshe', 32, ST_GeomFromText('POINT(14.3875 -28.5973)'), 3),
+('Mutinta Mulenga', 25, ST_GeomFromText('POINT(13.3875 -27.5973)'), 1),
+('Mwape Banda', 30, ST_GeomFromText('POINT(16.3875 -26.5973)'), 4),
+('Natasha Zulu', 22, ST_GeomFromText('POINT(17.3875 -25.5973)'), 2);
+
+INSERT INTO Healthcare_Facilities (Facility_Name, Location, Type, Number_of_Beds)
+VALUES 
+('Lusaka General Hospital', ST_GeomFromText('POINT(15.3875 -28.3228)'), 'Hospital', 150),
+('Kitwe Central Clinic', ST_GeomFromText('POINT(14.7585 -28.9874)'), 'Clinic', 50),
+('Ndola Regional Hospital', ST_GeomFromText('POINT(12.9785 -28.4567)'), 'Hospital', 200),
+('Livingstone Healthcare Center', ST_GeomFromText('POINT(16.7894 -25.8674)'), 'Clinic', 60),
+('Chipata District Hospital', ST_GeomFromText('POINT(13.3874 -30.4332)'), 'Hospital', 100);
+
+INSERT INTO Healthcare_Workers (Name, Qualification, Facility_ID)
+VALUES 
+('Dr. John Phiri', 'Doctor', 1),
+('Nurse Mary Chanda', 'Nurse', 2),
+('Midwife Grace Mwansa', 'Midwife', 3),
+('Dr. Patricia Lungu', 'Doctor', 4),
+('Nurse James Tembo', 'Nurse', 5);
+
+INSERT INTO Maternal_Health_Records (Mother_ID, Facility_ID, Date_of_Visit, Outcome)
+VALUES 
+(1, 1, '2024-07-15', 'Successful'),
+(2, 2, '2024-08-01', 'Complications'),
+(3, 3, '2024-07-25', 'Successful'),
+(4, 4, '2024-07-20', 'Successful'),
+(5, 5, '2024-08-10', 'Complications');
+
+-- Retrieve All Mothers and Their Details
+SELECT * FROM Mothers;
+SELECT Facility_Name, Type FROM Healthcare_Facilities;
+
+-- Retrieve All Healthcare Workers in a Specific Facility (e.g., Lusaka General Hospital)
+SELECT hw.Name, hw.Qualification
+FROM Healthcare_Workers hw
+JOIN Healthcare_Facilities hf ON hw.Facility_ID = hf.Facility_ID
+WHERE hf.Facility_Name = 'Lusaka General Hospital';
+
+-- Retrieve Maternal Health Records for a Specific Mother (e.g., Mother with ID 1)
+SELECT m.Name, mh.Date_of_Visit, hf.Facility_Name, mh.Outcome
+FROM Maternal_Health_Records mh
+JOIN Mothers m ON mh.Mother_ID = m.Mother_ID
+JOIN Healthcare_Facilities hf ON mh.Facility_ID = hf.Facility_ID
+WHERE m.Mother_ID = 1;
+
+-- Retrieve All Maternal Health Records from a Specific Facility (e.g., Ndola Regional Hospital)
+
+SELECT mh.Date_of_Visit, m.Name AS Mother_Name, mh.Outcome
+FROM Maternal_Health_Records mh
+JOIN Healthcare_Facilities hf ON mh.Facility_ID = hf.Facility_ID
+JOIN Mothers m ON mh.Mother_ID = m.Mother_ID
+WHERE hf.Facility_Name = 'Ndola Regional Hospital';
+
+-- Data Analysis SQL Queries:
+Count the Number of Visits per Healthcare Facility
+SELECT hf.Facility_Name, COUNT(mh.Record_ID) AS Number_of_Visits
+FROM Maternal_Health_Records mh
+JOIN Healthcare_Facilities hf ON mh.Facility_ID = hf.Facility_ID
+GROUP BY hf.Facility_Name
+ORDER BY Number_of_Visits DESC;
+
+-- Calculate the Average Age of Mothers with Successful Outcomes
+SELECT AVG(m.Age) AS Average_Age
+FROM Maternal_Health_Records mh
+JOIN Mothers m ON mh.Mother_ID = m.Mother_ID
+WHERE mh.Outcome = 'Successful';
+
+-- Find Facilities with the Highest Number of Complications
+SELECT hf.Facility_Name, COUNT(mh.Record_ID) AS Complications_Count
+FROM Maternal_Health_Records mh
+JOIN Healthcare_Facilities hf ON mh.Facility_ID = hf.Facility_ID
+WHERE mh.Outcome = 'Complications'
+GROUP BY hf.Facility_Name
+ORDER BY Complications_Count DESC;
+
+-- Determine the Most Common Qualification among Healthcare Workers
+SELECT Qualification, COUNT(Worker_ID) AS Number_of_Workers
+FROM Healthcare_Workers
+GROUP BY Qualification
+ORDER BY Number_of_Workers DESC;
+
+-- Analyze the Distribution of Mothers by Number of Pregnancies
+SELECT Number_of_Pregnancies, COUNT(Mother_ID) AS Number_of_Mothers
+FROM Mothers
+GROUP BY Number_of_Pregnancies
+ORDER BY Number_of_Mothers DESC;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
